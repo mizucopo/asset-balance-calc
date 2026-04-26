@@ -1,4 +1,4 @@
-# AssetCalc
+# asset-balance-calc
 
 資産配分計算ツール。目標配分割合に基づいて入出金額を各資産に配分します。
 
@@ -44,10 +44,10 @@ uv run task run
 uv run task test
 
 # 個別実行
-uv run pytest ./tests
-uv run mypy ./src
-uv run ruff check ./src
-uv run ruff format ./src
+uv run pytest
+uv run mypy
+uv run ruff check src tests stubs
+uv run ruff format src tests stubs
 ```
 
 ## ブランチ戦略
