@@ -28,7 +28,7 @@ class JsonLoader:
                 または負の値が許可されていない時に負の値が渡された場合
         """
         try:
-            result = Decimal(value.replace(",", ""))
+            result = Decimal(str(value).replace(",", ""))
         except InvalidOperation as e:
             raise ValueError(f"無効な数値形式です: {value}") from e
         if not allow_negative and result < 0:
@@ -54,7 +54,7 @@ class JsonLoader:
             Asset(
                 name=asset.name,
                 amount=self.parse_amount(asset.amount),
-                rate=Decimal(asset.rate),
+                rate=self._parse_rate(asset.rate),
             )
             for asset in raw_data.assets
         )
@@ -76,6 +76,23 @@ class JsonLoader:
             adjustment_amount=adjustment_amount,
             assets=assets,
         )
+
+    def _parse_rate(self, value: str) -> Decimal:
+        """rate文字列をDecimalに変換する
+
+        Args:
+            value: rate文字列
+
+        Returns:
+            変換後のDecimal値
+
+        Raises:
+            ValueError: 無効なrate形式の場合
+        """
+        try:
+            return Decimal(str(value))
+        except InvalidOperation as e:
+            raise ValueError(f"無効な数値形式です: {value}") from e
 
     def load_json(self, filename: str = "./config/config.json") -> Config:
         """JSONファイルを読み込み、Configオブジェクトに変換する
