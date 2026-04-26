@@ -743,3 +743,32 @@ def test_adjust_assets_without_calculated_assets_raises_value_error(
     # Act & Assert
     with pytest.raises(ValueError, match="calculated_assets"):
         service.adjust_assets(config)
+
+
+def test_adjust_assets_without_calculated_assets_zero_flow_ok(
+    service: AssetService,
+) -> None:
+    """calculated_assetsが未設定でもadjustment_amount=0の場合はエラーにならないこと
+
+    Arrange
+    - calculated_assetsが空でadjustment_amount=0のConfigを準備
+    Act
+    - adjust_assetsを実行
+    Assert
+    - Configがそのまま返されること
+    """
+    # Arrange
+    assets = (
+        Asset(name="株式", amount=Decimal("60000000"), rate=Decimal("0.60")),
+        Asset(name="債券", amount=Decimal("40000000"), rate=Decimal("0.40")),
+    )
+    config = Config(
+        adjustment_amount=Decimal("0"),
+        assets=assets,
+    )
+
+    # Act
+    result = service.adjust_assets(config)
+
+    # Assert
+    assert result.assets == config.assets
