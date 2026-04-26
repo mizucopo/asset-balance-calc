@@ -1,0 +1,98 @@
+"""フォーマット処理モジュール"""
+
+from src.constants.operation_type import OperationType
+from src.models.asset_calculation import AssetCalculation
+from src.models.config import Config
+
+
+class AssetFormatter:
+    """資産情報のフォーマット処理を行う"""
+
+    def format_current_summary(self, config: Config) -> str:
+        """現在の資産配分サマリーを生成する
+
+        Args:
+            config: 設定データ
+
+        Returns:
+            フォーマットされたサマリー文字列
+        """
+        lines = ["", "現在の資産配分"]
+        lines.extend(
+            self._format_asset_current(calc) for calc in config.calculated_assets
+        )
+        return "\n".join(lines)
+
+    def format_adjusted_summary(self, config: Config) -> str:
+        """調整後の資産配分サマリーを生成する
+
+        Args:
+            config: 設定データ
+
+        Returns:
+            フォーマットされたサマリー文字列
+        """
+        title = self._get_adjusted_title(config.operation_type)
+        lines = ["", title]
+        lines.extend(
+            self._format_asset_adjusted(calc, config.operation_type)
+            for calc in config.calculated_assets
+        )
+        lines.append("")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_asset_current(calc: AssetCalculation) -> str:
+        """現在の資産情報をフォーマットする
+
+        Args:
+            calc: 資産計算データ
+
+        Returns:
+            フォーマットされた資産情報文字列
+        """
+        return (
+            f"  {calc.asset.name}\n"
+            f"    資産額: {int(calc.asset.amount):,}円\n"
+            f"      割合: {calc.current_rate:.2%}"
+        )
+
+    def _format_asset_adjusted(
+        self, calc: AssetCalculation, operation_type: OperationType
+    ) -> str:
+        """調整後の資産情報をフォーマットする
+
+        Args:
+            calc: 資産計算データ
+            operation_type: 操作タイプ
+
+        Returns:
+            フォーマットされた資産情報文字列
+        """
+        lines = [f"  {calc.asset.name}"]
+        match operation_type:
+            case OperationType.DEPOSIT:
+                lines.append(f"    追加額: {int(calc.flow_amount):,}円")
+            case OperationType.WITHDRAWAL:
+                lines.append(f"    出金額: {int(abs(calc.flow_amount)):,}円")
+        lines.append(f"    資産額: {int(calc.asset.amount):,}円")
+        lines.append(f"      割合: {calc.current_rate:.2%}")
+        return "\n".join(lines)
+
+    @staticmethod
+    def _get_adjusted_title(operation_type: OperationType) -> str:
+        """操作タイプに応じたタイトルを返す
+
+        Args:
+            operation_type: 操作タイプ
+
+        Returns:
+            タイトル文字列
+        """
+        match operation_type:
+            case OperationType.DEPOSIT:
+                return "追加入金後の資産配分:"
+            case OperationType.WITHDRAWAL:
+                return "出金後の資産配分:"
+            case OperationType.NONE:
+                return "資産配分:"

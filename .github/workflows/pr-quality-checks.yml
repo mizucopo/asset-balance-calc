@@ -1,0 +1,91 @@
+name: PR Quality Checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quality-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Run pytest
+        id: pytest
+        continue-on-error: true
+        timeout-minutes: 10
+        run: |
+          uv run pytest --tb=short -v 2>&1 | tee pytest_output.txt
+          if [ ${PIPESTATUS[0]} -eq 0 ]; then
+            RESULT="✅ 成功"
+          else
+            RESULT="❌ 失敗 (終了コード: ${PIPESTATUS[0]})"
+          fi
+          echo "result=$RESULT" >> $GITHUB_OUTPUT
+
+      - name: Run mypy
+        id: mypy
+        continue-on-error: true
+        run: |
+          if uv run mypy > mypy_output.txt 2>&1; then
+            RESULT="✅ 成功"
+          else
+            RESULT="❌ 失敗"
+          fi
+          echo "result=$RESULT" >> $GITHUB_OUTPUT
+
+      - name: Run ruff format check
+        id: ruff-format
+        continue-on-error: true
+        run: |
+          if uv run ruff format --check . > ruff_format_output.txt 2>&1; then
+            RESULT="✅ 成功"
+          else
+            RESULT="❌ 失敗"
+          fi
+          echo "result=$RESULT" >> $GITHUB_OUTPUT
+
+      - name: Run ruff check
+        id: ruff-check
+        continue-on-error: true
+        run: |
+          if uv run ruff check . > ruff_check_output.txt 2>&1; then
+            RESULT="✅ 成功"
+          else
+            RESULT="❌ 失敗"
+          fi
+          echo "result=$RESULT" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork == false
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment ${{ github.event.number }} --body "
+          ## 🔍 Quality Checks Result
+
+          | Item | Result |
+          |-------------|------|
+          | pytest | ${{ steps.pytest.outputs.result }} |
+          | mypy | ${{ steps.mypy.outputs.result }} |
+          | ruff format | ${{ steps.ruff-format.outputs.result }} |
+          | ruff check | ${{ steps.ruff-check.outputs.result }} |
+          "
