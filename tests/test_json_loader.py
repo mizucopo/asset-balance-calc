@@ -197,6 +197,89 @@ def test_adjustment_amount_non_integer_raises_value_error(
         loader.convert_to_config(raw_data)
 
 
+def test_numeric_amount_in_json_accepted(
+    loader: JsonLoader,
+    tmp_path: Path,
+) -> None:
+    """JSONのamountに数値型が指定された場合でも正しく読み込まれること
+
+    Arrange
+    - amountが数値型のテスト用JSONファイルを作成
+    Act
+    - load_jsonを実行
+    Assert
+    - 正しくDecimalに変換されること
+    """
+    # Arrange
+    config_file = tmp_path / "config.json"
+    config_file.write_text(
+        '{"adjustment_amount": "10,000", '
+        '"assets": [{"name": "株式", "amount": 60000000, "rate": "0.60"}, '
+        '{"name": "債券", "amount": "40,000,000", "rate": "0.40"}]}',
+        encoding="utf-8",
+    )
+
+    # Act
+    result = loader.load_json(str(config_file))
+
+    # Assert
+    assert result.assets[0].amount == Decimal("60000000")
+
+
+def test_numeric_rate_in_json_accepted(
+    loader: JsonLoader,
+    tmp_path: Path,
+) -> None:
+    """JSONのrateに数値型が指定された場合でも正しく読み込まれること
+
+    Arrange
+    - rateが数値型のテスト用JSONファイルを作成
+    Act
+    - load_jsonを実行
+    Assert
+    - 正しくDecimalに変換されること
+    """
+    # Arrange
+    config_file = tmp_path / "config.json"
+    config_file.write_text(
+        '{"adjustment_amount": "10,000", '
+        '"assets": [{"name": "株式", "amount": "60,000,000", "rate": 0.60}, '
+        '{"name": "債券", "amount": "40,000,000", "rate": "0.40"}]}',
+        encoding="utf-8",
+    )
+
+    # Act
+    result = loader.load_json(str(config_file))
+
+    # Assert
+    assert result.assets[0].rate == Decimal("0.60")
+    assert result.assets[1].rate == Decimal("0.40")
+
+
+def test_invalid_rate_string_raises_value_error(
+    loader: JsonLoader,
+) -> None:
+    """rateに不正な文字列が指定された場合はValueErrorが送出されること
+
+    Arrange
+    - rateに数値として解釈できない文字列を含むConfigRawを準備
+    Act & Assert
+    - ValueErrorが送出されること
+    """
+    # Arrange
+    raw_data = ConfigRaw(
+        adjustment_amount="10,000",
+        assets=(
+            AssetRaw(name="株式", amount="60,000,000", rate="invalid"),
+            AssetRaw(name="債券", amount="40,000,000", rate="0.40"),
+        ),
+    )
+
+    # Act & Assert
+    with pytest.raises(ValueError, match="無効な数値形式です"):
+        loader.convert_to_config(raw_data)
+
+
 def test_amount_negative_raises_value_error(
     loader: JsonLoader,
 ) -> None:

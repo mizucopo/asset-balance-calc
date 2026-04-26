@@ -47,7 +47,16 @@ class AssetService:
 
         Returns:
             調整後の設定データ
+
+        Raises:
+            ValueError: calculated_assetsが未設定の場合
         """
+        if not config.calculated_assets:
+            raise ValueError(
+                "calculated_assetsが未設定です。"
+                "update_current_rateを先に実行してください。"
+            )
+
         match config.operation_type:
             case OperationType.DEPOSIT | OperationType.WITHDRAWAL:
                 return self._allocate(config)
