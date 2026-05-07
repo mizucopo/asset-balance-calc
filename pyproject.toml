@@ -9,6 +9,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "click>=8.3.1",
+    "mizu-common-py",
 ]
 
 [dependency-groups]
@@ -56,6 +57,9 @@ mypy_path = "src:stubs"
 [tool.taskipy.tasks]
 run = "python -m src.main"
 test = "ruff check --fix src tests stubs && ruff format src tests stubs && mypy && pytest"
+
+[tool.uv.sources]
+mizu-common-py = { git = "https://github.com/mizucopo/mizu-common-py.git", tag = "2.6.0" }
 
 [tool.uv]
 package = true

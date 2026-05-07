@@ -3,13 +3,21 @@
 from decimal import Decimal
 
 import pytest
+from mizu_common import (
+    Asset,
+    AssetCalculation,
+    LoggingConfigurator,
+)
 
 from src.formatters import AssetFormatter
 from src.json_loader import JsonLoader
-from src.models.asset import Asset
-from src.models.asset_calculation import AssetCalculation
 from src.models.config import Config
-from src.services.asset_service import AssetService
+
+
+@pytest.fixture(autouse=True)
+def _reset_logging() -> None:
+    """テスト間でログ初期化状態をリセットすること"""
+    LoggingConfigurator.reset()
 
 
 @pytest.fixture
@@ -58,9 +66,3 @@ def loader() -> JsonLoader:
 def formatter() -> AssetFormatter:
     """AssetFormatterのインスタンスが返されること"""
     return AssetFormatter()
-
-
-@pytest.fixture
-def service() -> AssetService:
-    """AssetServiceのインスタンスが返されること"""
-    return AssetService()
