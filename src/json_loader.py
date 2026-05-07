@@ -4,7 +4,8 @@ import json
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from src.models.asset import Asset
+from mizu_common import Asset, LoggingConfigurator
+
 from src.models.asset_raw import AssetRaw
 from src.models.config import Config
 from src.models.config_raw import ConfigRaw
@@ -12,6 +13,8 @@ from src.models.config_raw import ConfigRaw
 
 class JsonLoader:
     """JSON設定ファイルの読み込みと変換を行う"""
+
+    _logger = LoggingConfigurator.get_logger(__name__)
 
     def parse_amount(self, value: str, allow_negative: bool = False) -> Decimal:
         """カンマ区切りの数値文字列をDecimalに変換する
@@ -103,6 +106,7 @@ class JsonLoader:
         Returns:
             変換後のConfigオブジェクト
         """
+        self._logger.info("JSONファイルを読み込みます: %s", filename)
         with open(filename, "r") as file:
             raw_data: ConfigRaw = json.load(file, object_hook=self._dict_to_config_raw)
         return self.convert_to_config(raw_data)
