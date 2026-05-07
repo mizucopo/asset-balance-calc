@@ -4,7 +4,8 @@ import json
 from decimal import Decimal, InvalidOperation
 from typing import Any
 
-from src.models.asset import Asset
+from mizu_common import Asset, LoggingConfigurator
+
 from src.models.asset_raw import AssetRaw
 from src.models.config import Config
 from src.models.config_raw import ConfigRaw
@@ -12,6 +13,8 @@ from src.models.config_raw import ConfigRaw
 
 class JsonLoader:
     """JSON設定ファイルの読み込みと変換を行う"""
+
+    _logger = LoggingConfigurator.get_logger(__name__)
 
     def parse_amount(self, value: str, allow_negative: bool = False) -> Decimal:
         """カンマ区切りの数値文字列をDecimalに変換する
@@ -28,7 +31,7 @@ class JsonLoader:
                 または負の値が許可されていない時に負の値が渡された場合
         """
         try:
-            result = Decimal(value.replace(",", ""))
+            result = Decimal(str(value).replace(",", ""))
         except InvalidOperation as e:
             raise ValueError(f"無効な数値形式です: {value}") from e
         if not allow_negative and result < 0:
@@ -54,7 +57,7 @@ class JsonLoader:
             Asset(
                 name=asset.name,
                 amount=self.parse_amount(asset.amount),
-                rate=Decimal(asset.rate),
+                rate=self._parse_rate(asset.rate),
             )
             for asset in raw_data.assets
         )
@@ -77,6 +80,23 @@ class JsonLoader:
             assets=assets,
         )
 
+    def _parse_rate(self, value: str) -> Decimal:
+        """rate文字列をDecimalに変換する
+
+        Args:
+            value: rate文字列
+
+        Returns:
+            変換後のDecimal値
+
+        Raises:
+            ValueError: 無効なrate形式の場合
+        """
+        try:
+            return Decimal(str(value))
+        except InvalidOperation as e:
+            raise ValueError(f"無効な数値形式です: {value}") from e
+
     def load_json(self, filename: str = "./config/config.json") -> Config:
         """JSONファイルを読み込み、Configオブジェクトに変換する
 
@@ -86,6 +106,7 @@ class JsonLoader:
         Returns:
             変換後のConfigオブジェクト
         """
+        self._logger.info("JSONファイルを読み込みます: %s", filename)
         with open(filename, "r") as file:
             raw_data: ConfigRaw = json.load(file, object_hook=self._dict_to_config_raw)
         return self.convert_to_config(raw_data)

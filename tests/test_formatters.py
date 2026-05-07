@@ -2,9 +2,9 @@
 
 from decimal import Decimal
 
+from mizu_common import Asset, AssetAdjustmentResult, AssetCalculation
+
 from src.formatters import AssetFormatter
-from src.models.asset import Asset
-from src.models.asset_calculation import AssetCalculation
 from src.models.config import Config
 
 
@@ -63,22 +63,23 @@ def test_adjusted_summary_generated_correctly(
     """調整後のサマリーが生成されること
 
     Arrange
-    - calculated_assetsを持つConfigを準備
+    - AssetAdjustmentResultを準備
     Act
     - format_adjusted_summaryを実行
     Assert
     - サマリーに調整後のタイトルが含まれること
     """
     # Arrange
+    stock_calc = _make_calc(flow_amount=Decimal("6000"))
     bond_calc = _make_calc(name="債券", flow_amount=Decimal("4000"))
-    config = Config(
+    adj_result = AssetAdjustmentResult(
+        assets=(stock_calc.asset, bond_calc.asset),
+        calculated_assets=(stock_calc, bond_calc),
         adjustment_amount=Decimal("10000"),
-        assets=(),
-        calculated_assets=(_make_calc(flow_amount=Decimal("6000")), bond_calc),
     )
 
     # Act
-    result = formatter.format_adjusted_summary(config)
+    result = formatter.format_adjusted_summary(adj_result)
 
     # Assert
     assert "追加入金後の資産配分" in result
