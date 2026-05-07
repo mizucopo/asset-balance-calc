@@ -3,7 +3,6 @@
 from decimal import Decimal
 from typing import Any
 
-import pytest
 from click.testing import CliRunner
 from mizu_common import Asset, AssetService
 
@@ -200,13 +199,15 @@ def test_zero_adjustment_leaves_assets_unchanged() -> None:
     assert result_amounts == original_amounts
 
 
-def test_zero_total_amount_raises_value_error() -> None:
-    """資産合計がゼロの場合はValueErrorが送出されること
+def test_zero_total_amount_returns_zero_rate() -> None:
+    """資産合計がゼロの場合はcurrent_rateが0で返されること
 
     Arrange
     - 金額がゼロの資産を準備
-    Act & Assert
-    - ValueErrorが送出されること
+    Act
+    - calculate_current_ratesを実行
+    Assert
+    - 各資産のcurrent_rateが0であること
     """
     # Arrange
     service = AssetService()
@@ -215,9 +216,12 @@ def test_zero_total_amount_raises_value_error() -> None:
         Asset(name="債券", amount=Decimal("0"), rate=Decimal("0.40")),
     )
 
-    # Act & Assert
-    with pytest.raises(ValueError, match="total amount must be positive"):
-        service.calculate_current_rates(assets)
+    # Act
+    result = service.calculate_current_rates(assets)
+
+    # Assert
+    assert result[0].current_rate == Decimal("0")
+    assert result[1].current_rate == Decimal("0")
 
 
 # --- 統合テスト: CLI経由で主要 water-filling ケースを検証 ---
