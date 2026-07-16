@@ -1,6 +1,6 @@
 [project]
 name = "asset-balance-calc"
-version = "1.1.6"
+version = "1.1.7"
 description = "asset-balance-calc"
 authors = [
     {name = "みず", email = "mizu.copo@gmail.com"}
