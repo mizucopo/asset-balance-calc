@@ -1,6 +1,6 @@
 [project]
 name = "asset-balance-calc"
-version = "1.1.4"
+version = "1.1.5"
 description = "asset-balance-calc"
 authors = [
     {name = "みず", email = "mizu.copo@gmail.com"}
@@ -15,7 +15,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
-    "pytest>=9.0.2",
+    "pytest>=9.0.3",
     "pytest-mock>=3.15.1",
     "python-decouple-stubs>=0.1",
     "ruff>=0.14.10",
