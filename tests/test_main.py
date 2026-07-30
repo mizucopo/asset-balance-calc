@@ -288,6 +288,67 @@ def test_cli_withdrawal_produces_correct_output(tmp_path: Any) -> None:
     assert "出金後の資産配分" in result.output
 
 
+def test_cli_summaries_prioritize_larger_withdrawals(tmp_path: Any) -> None:
+    """現在と出金後が出金額の大きい銘柄順で出力されること
+
+    Arrange:
+    - 設定順と出金額順が異なるJSONファイルが準備される
+    Act:
+    - CLIが実行される
+    Assert:
+    - 現在と出金後の両方で出金額の大きい銘柄が先に出力されること
+    """
+    # Arrange
+    runner = CliRunner()
+    config_path = _write_config_json(
+        tmp_path,
+        '{"adjustment_amount": "-100,000", '
+        '"assets": [{"name": "債券", "amount": "40,000,000", "rate": "0.40"}, '
+        '{"name": "株式", "amount": "60,000,000", "rate": "0.60"}]}',
+    )
+
+    # Act
+    result = runner.invoke(main, ["-c", config_path])
+
+    # Assert
+    assert result.exit_code == 0
+    current_start = result.output.index("現在の資産配分")
+    adjusted_start = result.output.index("出金後の資産配分")
+    current_summary = result.output[current_start:adjusted_start]
+    adjusted_summary = result.output[adjusted_start:]
+    assert current_summary.index("株式") < current_summary.index("債券")
+    assert adjusted_summary.index("株式") < adjusted_summary.index("債券")
+
+
+def test_cli_adjustment_error_outputs_only_reason(tmp_path: Any) -> None:
+    """調整に失敗した場合にエラー理由のみが出力されること
+
+    Arrange:
+    - 全資産額と同額を出金するJSONファイルが準備される
+    Act:
+    - CLIが実行される
+    Assert:
+    - 資産配分を含まず、具体的なエラー理由が出力されること
+    """
+    # Arrange
+    runner = CliRunner()
+    config_path = _write_config_json(
+        tmp_path,
+        '{"adjustment_amount": "-100,000,000", '
+        '"assets": [{"name": "株式", "amount": "60,000,000", "rate": "0.60"}, '
+        '{"name": "債券", "amount": "40,000,000", "rate": "0.40"}]}',
+    )
+
+    # Act
+    result = runner.invoke(main, ["-c", config_path])
+
+    # Assert
+    assert result.exit_code != 0
+    assert result.output == "Error: final total would be negative\n"
+    assert "現在の資産配分" not in result.output
+    assert "出金後の資産配分" not in result.output
+
+
 def test_cli_zero_adjustment_produces_correct_output(tmp_path: Any) -> None:
     """CLIで調整額ゼロ時の出力が正しいこと
 
