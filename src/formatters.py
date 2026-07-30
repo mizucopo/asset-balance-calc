@@ -8,18 +8,24 @@ from src.models.config import Config
 class AssetFormatter:
     """資産情報のフォーマット処理を行う"""
 
-    def format_current_summary(self, config: Config) -> str:
+    def format_current_summary(
+        self,
+        config: Config,
+        result: AssetAdjustmentResult,
+    ) -> str:
         """現在の資産配分サマリーを生成する
 
         Args:
             config: 設定データ
+            result: 資産調整結果
 
         Returns:
             フォーマットされたサマリー文字列
         """
         lines = ["", "現在の資産配分"]
         lines.extend(
-            self._format_asset_current(calc) for calc in config.calculated_assets
+            self._format_asset_current(config.calculated_assets[index])
+            for index in self._get_prioritized_indices(result)
         )
         return "\n".join(lines)
 
@@ -35,11 +41,34 @@ class AssetFormatter:
         title = self._get_adjusted_title(result.operation_type)
         lines = ["", title]
         lines.extend(
-            self._format_asset_adjusted(calc, result.operation_type)
-            for calc in result.calculated_assets
+            self._format_asset_adjusted(
+                result.calculated_assets[index],
+                result.operation_type,
+            )
+            for index in self._get_prioritized_indices(result)
         )
         lines.append("")
         return "\n".join(lines)
+
+    @staticmethod
+    def _get_prioritized_indices(
+        result: AssetAdjustmentResult,
+    ) -> tuple[int, ...]:
+        """入出金額の絶対値が大きい順のインデックスを返す
+
+        Args:
+            result: 資産調整結果
+
+        Returns:
+            優先順に並べたインデックス
+        """
+        return tuple(
+            sorted(
+                range(len(result.calculated_assets)),
+                key=lambda index: abs(result.calculated_assets[index].flow_amount),
+                reverse=True,
+            )
+        )
 
     @staticmethod
     def _format_asset_current(calc: AssetCalculation) -> str:

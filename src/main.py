@@ -34,14 +34,13 @@ def main(config: str) -> None:
     calculated = service.calculate_current_rates(loaded_config.assets)
     config_with_rates = replace(loaded_config, calculated_assets=calculated)
 
-    print(formatter.format_current_summary(config_with_rates))
-
     logger.info(
         "資産配分調整を実行します (操作: %s)",
         loaded_config.operation_type.value,
     )
     result = service.adjust_assets(calculated, loaded_config.adjustment_amount)
 
+    print(formatter.format_current_summary(config_with_rates, result))
     print(formatter.format_adjusted_summary(result))
     logger.info("計算が完了しました")
 

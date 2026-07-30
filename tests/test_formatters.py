@@ -47,14 +47,65 @@ def test_current_summary_generated_correctly(
         assets=(),
         calculated_assets=(_make_calc(), bond_calc),
     )
+    adj_result = AssetAdjustmentResult(
+        assets=tuple(calc.asset for calc in config.calculated_assets),
+        calculated_assets=config.calculated_assets,
+        adjustment_amount=Decimal("0"),
+    )
 
     # Act
-    result = formatter.format_current_summary(config)
+    result = formatter.format_current_summary(config, adj_result)
 
     # Assert
     assert "現在の資産配分" in result
     assert "株式" in result
     assert "債券" in result
+
+
+def test_summaries_prioritize_larger_flow_amounts(
+    formatter: AssetFormatter,
+) -> None:
+    """現在と調整後が入出金額の絶対値が大きい銘柄順で出力されること
+
+    Arrange
+    - 設定順と入出金額順が異なり、同額の銘柄を含む計算結果が準備される
+    Act
+    - 現在と調整後のサマリーが生成される
+    Assert
+    - 両方が入出金額の絶対値降順かつ同額時は設定順で出力されること
+    """
+    # Arrange
+    current_calculations = (
+        _make_calc(name="株式"),
+        _make_calc(name="債券"),
+        _make_calc(name="金"),
+        _make_calc(name="現金"),
+    )
+    adjusted_calculations = (
+        _make_calc(name="株式", flow_amount=Decimal("0")),
+        _make_calc(name="債券", flow_amount=Decimal("5000")),
+        _make_calc(name="金", flow_amount=Decimal("10000")),
+        _make_calc(name="現金", flow_amount=Decimal("5000")),
+    )
+    config = Config(
+        adjustment_amount=Decimal("20000"),
+        assets=tuple(calc.asset for calc in current_calculations),
+        calculated_assets=current_calculations,
+    )
+    adj_result = AssetAdjustmentResult(
+        assets=tuple(calc.asset for calc in adjusted_calculations),
+        calculated_assets=adjusted_calculations,
+        adjustment_amount=Decimal("20000"),
+    )
+
+    # Act
+    current_summary = formatter.format_current_summary(config, adj_result)
+    adjusted_summary = formatter.format_adjusted_summary(adj_result)
+
+    # Assert
+    expected_order = ("金", "債券", "現金", "株式")
+    assert tuple(sorted(expected_order, key=current_summary.index)) == expected_order
+    assert tuple(sorted(expected_order, key=adjusted_summary.index)) == expected_order
 
 
 def test_adjusted_summary_generated_correctly(
