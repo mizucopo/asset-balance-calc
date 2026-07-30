@@ -67,11 +67,11 @@ def test_summaries_prioritize_larger_flow_amounts(
 ) -> None:
     """現在と調整後が入出金額の絶対値が大きい銘柄順で出力されること
 
-    Arrange
+    Arrange:
     - 設定順と入出金額順が異なり、同額の銘柄を含む計算結果が準備される
-    Act
+    Act:
     - 現在と調整後のサマリーが生成される
-    Assert
+    Assert:
     - 両方が入出金額の絶対値降順かつ同額時は設定順で出力されること
     """
     # Arrange
