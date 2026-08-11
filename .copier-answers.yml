@@ -4,7 +4,7 @@ author_email: mizu.copo@gmail.com
 author_name: みず
 project_description: 資産配分計算ツール
 project_name: asset-balance-calc
-project_version: 1.2.7
+project_version: 1.2.8
 python_project_kind: application
 python_version: '3.14'
 use_chrome_extension: false
